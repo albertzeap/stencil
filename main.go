@@ -15,13 +15,10 @@ func main() {
 	// Initialize the logger for the web server
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	// Initialize multiplexer (router)
-	mux := http.NewServeMux()
-
 	//Initialize web server object
 	server := &http.Server{
 		Addr:              ":8080",
-		Handler:           mux,
+		Handler:           routes(),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
