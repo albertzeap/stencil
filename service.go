@@ -2,20 +2,10 @@ package main
 
 // CreateTemplate creates a template
 func CreateTemplate(name, body string) (Template, error) {
-	respTemp := Template{
-		ID:   1,
-		Name: name,
-		Body: body,
-	}
-	return respTemp, nil
+	return Template{ID: 1, Name: name, Body: body}, nil
 }
 
 // CreateParameter creates a parameter
 func CreateParameter(key, value string) (Parameter, error) {
-	respParameter := Parameter{
-		ID:    1,
-		Key:   key,
-		Value: value,
-	}
-	return respParameter, nil
+	return Parameter{ID: 1, Key: key, Value: value}, nil
 }
