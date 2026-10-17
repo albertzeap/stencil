@@ -7,10 +7,12 @@ type Template struct {
 	Body string `json:"body"`
 }
 
-// Parameter is a key-value struct that resembles which placeholders to replace
-// in a Template
-type Parameter struct {
-	ID    int    `json:"id"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
+// Parameter is a map of key value pairs
+// These key value pairs represent the placeholder keys
+// and the values that the template will contain
+type Parameter map[string]string
+
+// Parameters are maps of Parameter
+// These are useful in the case when mutiple Parameter
+// are applied to the same template for bulk generation
+type Parameters []Parameters

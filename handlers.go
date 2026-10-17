@@ -37,34 +37,24 @@ func postTemplate(writer http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(writer).Encode(createdTemp)
 }
 
-// postParameter creates a parameter from the incoming post request
-func postParameter(writer http.ResponseWriter, request *http.Request) {
+// generateDocument creates the documents with the given template and parameters from the incoming post request
+func generateDocuments(writer http.ResponseWriter, request *http.Request) {
 	var payload struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
+		TemplateID int         `json:"template_id"`
+		Parameters []Parameter `json:"parameters"`
 	}
 	// Check to see if the request is valid JSON
 	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
-		http.Error(writer, "Not a valid request value", http.StatusBadRequest)
+		http.Error(writer, "Not a valid request body", http.StatusBadRequest)
 		return
 	}
 	// Check to see if the request has values for requested fields
-	if payload.Key == "" || payload.Value == "" {
-		http.Error(writer, "Not a valid request value", http.StatusBadRequest)
+	if payload.TemplateID == 0 || len(payload.Parameters) == 0 {
+		http.Error(writer, "Not a valid request body", http.StatusBadRequest)
 		return
 	}
-	createdTemp, err := CreateParameter(payload.Key, payload.Value)
-	if err != nil {
-		http.Error(writer, "Failed to create template", http.StatusInternalServerError)
-		return
-	}
+	createdDocument := Parameter{"key": "value"}
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(createdTemp)
-}
-
-// generateDocument creates the documents with the given template and parameters from the incoming post request
-func generateDocument(writer http.ResponseWriter, request *http.Request) {
-	writer.WriteHeader(http.StatusCreated)
-	writer.Write([]byte("Document has been created\n"))
+	json.NewEncoder(writer).Encode(createdDocument)
 }
