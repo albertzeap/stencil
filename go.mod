@@ -1,3 +1,3 @@
-module letter-generator
+module stencil
 
 go 1.26.8
