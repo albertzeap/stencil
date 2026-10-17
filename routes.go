@@ -11,6 +11,6 @@ func routes() http.Handler {
 
 	mux.HandleFunc("POST /templates", postTemplate)
 	mux.HandleFunc("POST /parameters", postParameter)
-	mux.HandleFunc("POST /documents", postParameter)
+	mux.HandleFunc("POST /documents", generateDocument)
 	return mux
 }
