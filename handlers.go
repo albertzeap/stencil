@@ -11,6 +11,18 @@ func healthz(writer http.ResponseWriter, request *http.Request) {
 	writer.Write([]byte("Server is up and healthy\n"))
 }
 
+func handleGetTemplate(writer http.ResponseWriter, request *http.Request) {
+	id := request.PathValue("id")
+	templ, err := getTemplate(id)
+	if err != nil {
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusNotFound)
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusFound)
+	json.NewEncoder(writer).Encode(templ)
+}
+
 // postTemplate creates a template from the incoming post request
 func postTemplate(writer http.ResponseWriter, request *http.Request) {
 	var payload struct {

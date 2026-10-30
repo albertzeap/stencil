@@ -8,6 +8,7 @@ func routes() http.Handler {
 	mux := http.NewServeMux()
 	// Route for a healthcheck
 	mux.HandleFunc("GET /healthz", healthz)
+	mux.HandleFunc("GET /templates/{id}", handleGetTemplate)
 
 	mux.HandleFunc("POST /templates", postTemplate)
 	mux.HandleFunc("POST /documents", generateDocuments)
