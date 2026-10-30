@@ -40,7 +40,7 @@ func postTemplate(writer http.ResponseWriter, request *http.Request) {
 // generateDocument creates the documents with the given template and parameters from the incoming post request
 func generateDocuments(writer http.ResponseWriter, request *http.Request) {
 	var payload struct {
-		TemplateID int         `json:"template_id"`
+		TemplateID string      `json:"template_id"`
 		Parameters []Parameter `json:"parameters"`
 	}
 	// Check to see if the request is valid JSON
@@ -49,11 +49,11 @@ func generateDocuments(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Check to see if the request has values for requested fields
-	if payload.TemplateID == 0 || len(payload.Parameters) == 0 {
+	if payload.TemplateID == "" || len(payload.Parameters) == 0 {
 		http.Error(writer, "Not a valid request body", http.StatusBadRequest)
 		return
 	}
-	createdDocument := Parameter{"key": "value"}
+	createdDocument := CreateDocument(payload.TemplateID, payload.Parameters)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 	json.NewEncoder(writer).Encode(createdDocument)

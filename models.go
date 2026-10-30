@@ -2,7 +2,7 @@ package main
 
 // Template is a resuable document body with placeholders
 type Template struct {
-	ID   int    `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 	Body string `json:"body"`
 }
@@ -15,4 +15,4 @@ type Parameter map[string]string
 // Parameters are maps of Parameter
 // These are useful in the case when mutiple Parameter
 // are applied to the same template for bulk generation
-type Parameters []Parameters
+type Parameters []Parameter
