@@ -29,7 +29,7 @@ func postTemplate(writer http.ResponseWriter, request *http.Request) {
 	}
 	createdTemp, err := CreateTemplate(payload.Name, payload.Body)
 	if err != nil {
-		http.Error(writer, "Failed to create template", http.StatusInternalServerError)
+		http.Error(writer, "Failed to create template: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
@@ -45,15 +45,20 @@ func generateDocuments(writer http.ResponseWriter, request *http.Request) {
 	}
 	// Check to see if the request is valid JSON
 	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
-		http.Error(writer, "Not a valid request body", http.StatusBadRequest)
+		http.Error(writer, "Not a valid request body. Not valid JSON", http.StatusBadRequest)
 		return
 	}
 	// Check to see if the request has values for requested fields
 	if payload.TemplateID == "" || len(payload.Parameters) == 0 {
-		http.Error(writer, "Not a valid request body", http.StatusBadRequest)
+		http.Error(writer, "Not a valid request body. Missing fields", http.StatusBadRequest)
 		return
 	}
-	createdDocument := CreateDocument(payload.TemplateID, payload.Parameters)
+	createdDocument, err := CreateDocument(payload.TemplateID, payload.Parameters)
+	if err != nil {
+		http.Error(writer, "Failed to create document: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 	json.NewEncoder(writer).Encode(createdDocument)
