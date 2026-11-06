@@ -84,10 +84,32 @@ func getTemplate(id string) (Template, error) {
 
 // TODO:  Store the parameters
 func saveParameters(templateId string, params Parameters) error {
+	conn, err := getDB()
+	if err != nil {
+		return err
+	}
+	_, err = conn.Exec("INSERT INTO parameters (template_id, data) VALUES (?, ?)", templateId, params)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // TODO:  Get the parameters
 func getParameters(templateId string) (Parameters, error) {
-	return Parameters{}, nil
+	conn, err := getDB()
+	if err != nil {
+		return Parameters{}, err
+	}
+	var params Parameters
+	err = conn.QueryRow("SELECT data FROM parameters WHERE template_id = ?", templateId).Scan(&params)
+	// Error if there is nothing found
+	if errors.Is(err, sql.ErrNoRows) {
+		return Parameters{}, err
+	}
+	if err != nil {
+		return Parameters{}, err
+	}
+
+	return params, nil
 }

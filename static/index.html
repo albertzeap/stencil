@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>stencil</title>
+  <meta name="description" content="Write a letter once, then fill in the blanks for everyone.">
+  <meta name="theme-color" content="#323437">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23323437'/%3E%3Crect x='6' y='13' width='20' height='6' rx='1.5' fill='%23e2b714'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <a class="logo" href="/" aria-label="stencil home">
+        <span class="logo-mark" aria-hidden="true">{{ }}</span>
+        <span class="logo-text">stencil</span>
+      </a>
+      <nav class="nav" aria-label="Views">
+        <button type="button" class="icon-btn" data-view="write" title="write" aria-label="Write">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+        </button>
+        <button type="button" class="icon-btn" data-view="recipients" title="recipients" aria-label="Recipients">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14.2c2.3.4 3.7 2.2 3.7 5.3"/></svg>
+        </button>
+        <button type="button" class="icon-btn" data-view="letters" id="nav-letters" title="letters" aria-label="Letters" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>
+        </button>
+      </nav>
+      <button type="button" class="icon-btn top-right" id="open-palette" title="templates (esc)" aria-label="Templates">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+      </button>
+    </header>
+
+    <main class="stage">
+      <!-- write: the home screen -->
+      <section id="view-write" class="view" aria-label="Write the template">
+        <div class="pill-row">
+          <div class="pill">
+            <label class="sr-only" for="template-name">Template name</label>
+            <input id="template-name" class="pill-input" type="text" autocomplete="off" spellcheck="false" placeholder="template name">
+            <span class="sep" aria-hidden="true"></span>
+            <span class="pill-item dim">fields</span>
+            <span id="fields" class="pill-item" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <div class="typing">
+          <div id="mirror" class="typing-text mirror" aria-hidden="true"></div>
+          <label class="sr-only" for="template-body">Letter text</label>
+          <textarea id="template-body" class="typing-text" spellcheck="false" autocomplete="off" autocapitalize="off" rows="3"
+            placeholder="start typing your letter. wrap a blank like {{ .name }}"></textarea>
+        </div>
+
+        <div class="hint">
+          <button type="button" class="hint-btn" id="btn-continue">
+            <span class="keys"><kbd>ctrl</kbd><span>+</span><kbd>enter</kbd></span>
+            <span class="label">continue</span>
+          </button>
+          <span class="hint-item"><kbd>esc</kbd><span class="label">templates</span></span>
+        </div>
+      </section>
+
+      <!-- recipients: one row per letter -->
+      <section id="view-recipients" class="view" aria-label="Recipients" hidden>
+        <div class="pill-row">
+          <div class="pill">
+            <span class="pill-item dim">recipients</span>
+            <span id="recipient-count" class="pill-item value">1</span>
+            <span class="sep" aria-hidden="true"></span>
+            <button type="button" class="pill-btn" id="add-row">add</button>
+          </div>
+        </div>
+
+        <div id="recipients" class="recipients"></div>
+
+        <div class="hint">
+          <button type="button" class="hint-btn" id="btn-generate">
+            <span class="keys"><kbd>ctrl</kbd><span>+</span><kbd>enter</kbd></span>
+            <span class="label">generate</span>
+          </button>
+          <span class="hint-item"><kbd>enter</kbd><span class="label">next row</span></span>
+        </div>
+      </section>
+
+      <!-- letters: the results -->
+      <section id="view-letters" class="view" aria-label="Letters" hidden>
+        <div class="results-head">
+          <div class="stats">
+            <div class="stat"><div class="stat-label">letters</div><div class="stat-value" id="stat-letters">0</div></div>
+            <div class="stat"><div class="stat-label">words</div><div class="stat-value" id="stat-words">0</div></div>
+          </div>
+          <div class="pill">
+            <button type="button" class="pill-btn" id="copy-all">copy all</button>
+            <button type="button" class="pill-btn" id="download-all">download all</button>
+            <button type="button" class="pill-btn" id="print">print</button>
+          </div>
+        </div>
+
+        <div id="letters" class="letters"></div>
+
+        <div class="hint">
+          <button type="button" class="hint-btn" id="btn-back">
+            <span class="keys"><kbd>ctrl</kbd><span>+</span><kbd>enter</kbd></span>
+            <span class="label">back to write</span>
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <dialog id="palette" class="palette" aria-label="Templates">
+    <input id="palette-input" type="text" autocomplete="off" spellcheck="false" role="combobox"
+      aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list"
+      placeholder="search templates, or paste an ID">
+    <ul id="palette-list" class="palette-list" role="listbox"></ul>
+  </dialog>
+
+  <noscript><p class="noscript">stencil needs JavaScript turned on.</p></noscript>
+  <script src="/api.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
