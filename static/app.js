@@ -40,7 +40,8 @@
 
   const state = {
     view: "write",
-    saved: null, // the template as the server has it: { id, name, body }
+    saved: null, // the template as the server has it: { id, name, body, parameters }
+    savedSnapshot: "", // snapshot() of the page at the moment it was saved or opened
     fields: [], // placeholder names found in the body, in order of appearance
     rows: [{}], // one object per recipient: { fieldName: value }
     letters: [], // generated text, one entry per recipient
@@ -86,9 +87,22 @@
     return found;
   }
 
+  // The parameters to store with the template: one object per letter, holding
+  // every field the body uses. A body with no fields still needs one empty
+  // object, because the server renders one letter per parameter.
+  function buildParameters() {
+    const fields = state.fields;
+    if (fields.length === 0) return [{}];
+    return state.rows.map((row) => Object.fromEntries(fields.map((f) => [f, row[f] || ""])));
+  }
+
+  // Everything that gets saved, as one string, so "changed since saved?" is a comparison
+  function snapshot() {
+    return JSON.stringify({ name: els.name.value.trim(), body: els.body.value, parameters: buildParameters() });
+  }
+
   function isDirty() {
-    const s = state.saved;
-    return !s || s.name !== els.name.value.trim() || s.body !== els.body.value;
+    return !state.saved || snapshot() !== state.savedSnapshot;
   }
 
   function countWords(s) {
@@ -282,6 +296,7 @@
         input.setAttribute("aria-label", f + ", recipient " + (r + 1));
         input.addEventListener("input", () => {
           row[f] = input.value;
+          updateActions(); // editing a recipient changes the saved template
         });
         input.addEventListener("keydown", (e) => {
           if (e.key !== "Enter" || e.ctrlKey || e.metaKey) return;
@@ -304,6 +319,7 @@
       remove.addEventListener("click", () => {
         state.rows.splice(r, 1);
         renderRecipients();
+        updateActions();
         focusCell(Math.min(r, state.rows.length - 1), 0);
       });
       end.append(remove);
@@ -314,6 +330,7 @@
   function addRow(focusCol) {
     state.rows.push({});
     renderRecipients();
+    updateActions();
     focusCell(state.rows.length - 1, focusCol || 0);
   }
 
@@ -426,21 +443,24 @@
     state.busy = true;
     updateActions();
     try {
+      // A template stores its own recipients, so they are saved together with it.
+      const fields = state.fields.slice();
+      const parameters = buildParameters();
       let template = state.saved;
       if (isDirty()) {
         // The server has no update endpoint, so a changed template is saved as a new one.
-        template = await api.createTemplate(name, body);
+        const snap = snapshot();
+        template = await api.createTemplate(name, body, parameters);
         state.saved = template;
+        state.savedSnapshot = snap;
         remember(template);
       }
 
-      const fields = state.fields.slice();
-      const rows = fields.length ? state.rows : [{}];
-      const parameters = rows.map((row) => Object.fromEntries(fields.map((f) => [f, row[f] || ""])));
-      const letters = await api.generateDocuments(template.id, parameters);
+      // The server renders the template with the parameters it has stored.
+      const letters = await api.generateDocuments(template.id);
 
-      const labels = rows.map((row, i) => {
-        const first = fields.length ? (row[fields[0]] || "").trim() : "";
+      const labels = parameters.map((p, i) => {
+        const first = fields.length ? (p[fields[0]] || "").trim() : "";
         return first ? "letter for " + first : "letter " + (i + 1);
       });
       showLetters(letters, labels);
@@ -464,11 +484,15 @@
       state.saved = t;
       els.name.value = t.name;
       els.body.value = t.body;
-      state.rows = [{}];
+      // A saved template brings its recipients back with it.
+      const stored = Array.isArray(t.parameters) ? t.parameters.filter((p) => p && typeof p === "object") : [];
+      state.rows = stored.length ? stored.map((p) => ({ ...p })) : [{}];
       state.fields = [];
       remember(t);
       hideLetters();
       onBodyChange();
+      state.savedSnapshot = snapshot();
+      updateActions();
       setView("write");
       focusBody(true);
     } catch (err) {
@@ -483,6 +507,7 @@
 
   function newTemplate() {
     state.saved = null;
+    state.savedSnapshot = "";
     state.rows = [{}];
     state.fields = [];
     els.name.value = "";

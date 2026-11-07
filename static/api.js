@@ -35,12 +35,13 @@
 
   window.api = {
     ApiError,
-    // -> { id, name, body }
+    // -> { id, name, body, parameters }
     getTemplate: (id) => request("/templates/" + encodeURIComponent(id)),
-    // -> { id, name, body }
-    createTemplate: (name, body) => postJSON("/templates", { name, body }),
-    // parameters: [{ field: value, ... }, ...]  -> ["letter 1", "letter 2", ...]
-    generateDocuments: (templateId, parameters) =>
-      postJSON("/documents", { template_id: templateId, parameters }),
+    // A template carries its own parameters: [{ field: value, ... }, ...], one per letter.
+    // -> { id, name, body, parameters }
+    createTemplate: (name, body, parameters) => postJSON("/templates", { name, body, parameters }),
+    // The server renders the template with the parameters it stored.
+    // -> ["letter 1", "letter 2", ...]
+    generateDocuments: (templateId) => postJSON("/documents", { template_id: templateId }),
   };
 })();

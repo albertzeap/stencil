@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	_ "modernc.org/sqlite"
 	"sync"
@@ -19,14 +20,9 @@ const (
 	schema   = `
 	CREATE TABLE IF NOT EXISTS templates (
 		id TEXT PRIMARY KEY,
-		name text NOT NULL, 
-		body text NOT NULL
-	);
-
-	CREATE TABLE IF NOT EXISTS parameters (
-		id TEXT PRIMARY KEY,
-		template_id TEXT NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
-		data TEXT
+		name TEXT NOT NULL, 
+		body TEXT NOT NULL,
+		parameters TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(parameters))
 	);
 	`
 )
@@ -52,9 +48,16 @@ func saveTemplate(templ Template) error {
 	if err != nil {
 		return err
 	}
+	if templ.Parameters == nil {
+		templ.Parameters = Parameters{}
+	}
+	jsonBlob, err := json.Marshal(templ.Parameters)
+	if err != nil {
+		return err
+	}
 	// Insert the template into the sqlite db
-	_, err = conn.Exec("INSERT INTO templates (id, name, body) VALUES (?, ?, ?)",
-		templ.ID, templ.Name, templ.Body,
+	_, err = conn.Exec("INSERT INTO templates (id, name, body, parameters) VALUES (?, ?, ?, ?)",
+		templ.ID, templ.Name, templ.Body, string(jsonBlob),
 	)
 	if err != nil {
 		return err
@@ -68,48 +71,18 @@ func getTemplate(id string) (Template, error) {
 	if err != nil {
 		return Template{}, err
 	}
-	var templ Template
+	var (
+		templ      Template
+		stringBlob string
+	)
 	// Select the ID for the template
-	err = conn.QueryRow("SELECT id, name, body FROM templates WHERE id = ?", id).Scan(&templ.ID, &templ.Name, &templ.Body)
+	err = conn.QueryRow("SELECT id, name, body, parameters FROM templates WHERE id = ?", id).Scan(&templ.ID, &templ.Name, &templ.Body, &stringBlob)
 	// Error if there is nothing found
 	if errors.Is(err, sql.ErrNoRows) {
 		return Template{}, err
 	}
-	if err != nil {
+	if json.Unmarshal([]byte(stringBlob), &templ.Parameters); err != nil {
 		return Template{}, err
 	}
-
 	return templ, nil
-}
-
-// TODO:  Store the parameters
-func saveParameters(templateId string, params Parameters) error {
-	conn, err := getDB()
-	if err != nil {
-		return err
-	}
-	_, err = conn.Exec("INSERT INTO parameters (template_id, data) VALUES (?, ?)", templateId, params)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// TODO:  Get the parameters
-func getParameters(templateId string) (Parameters, error) {
-	conn, err := getDB()
-	if err != nil {
-		return Parameters{}, err
-	}
-	var params Parameters
-	err = conn.QueryRow("SELECT data FROM parameters WHERE template_id = ?", templateId).Scan(&params)
-	// Error if there is nothing found
-	if errors.Is(err, sql.ErrNoRows) {
-		return Parameters{}, err
-	}
-	if err != nil {
-		return Parameters{}, err
-	}
-
-	return params, nil
 }

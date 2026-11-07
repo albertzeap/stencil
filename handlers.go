@@ -17,17 +17,19 @@ func handleGetTemplate(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusNotFound)
+		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusFound)
+	writer.WriteHeader(http.StatusOK)
 	json.NewEncoder(writer).Encode(templ)
 }
 
 // postTemplate creates a template from the incoming post request
 func postTemplate(writer http.ResponseWriter, request *http.Request) {
 	var payload struct {
-		Name string `json:"name"`
-		Body string `json:"body"`
+		Name       string     `json:"name"`
+		Body       string     `json:"body"`
+		Parameters Parameters `json:"parameters"`
 	}
 	// Check to see if the request is valid JSON
 	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
@@ -39,7 +41,8 @@ func postTemplate(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Not a valid request body", http.StatusBadRequest)
 		return
 	}
-	createdTemp, err := CreateTemplate(payload.Name, payload.Body)
+
+	createdTemp, err := CreateTemplate(payload.Name, payload.Body, payload.Parameters)
 	if err != nil {
 		http.Error(writer, "Failed to create template: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -52,8 +55,7 @@ func postTemplate(writer http.ResponseWriter, request *http.Request) {
 // generateDocument creates the documents with the given template and parameters from the incoming post request
 func generateDocuments(writer http.ResponseWriter, request *http.Request) {
 	var payload struct {
-		TemplateID string      `json:"template_id"`
-		Parameters []Parameter `json:"parameters"`
+		TemplateID string `json:"template_id"`
 	}
 	// Check to see if the request is valid JSON
 	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
@@ -61,11 +63,11 @@ func generateDocuments(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	// Check to see if the request has values for requested fields
-	if payload.TemplateID == "" || len(payload.Parameters) == 0 {
+	if payload.TemplateID == "" {
 		http.Error(writer, "Not a valid request body. Missing fields", http.StatusBadRequest)
 		return
 	}
-	createdDocument, err := CreateDocument(payload.TemplateID, payload.Parameters)
+	createdDocument, err := CreateDocument(payload.TemplateID)
 	if err != nil {
 		http.Error(writer, "Failed to create document: "+err.Error(), http.StatusInternalServerError)
 		return

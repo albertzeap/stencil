@@ -2,9 +2,10 @@ package main
 
 // Template is a resuable document body with placeholders
 type Template struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Body string `json:"body"`
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	Body       string     `json:"body"`
+	Parameters Parameters `json:"parameters"`
 }
 
 // Parameter is a map of key value pairs
